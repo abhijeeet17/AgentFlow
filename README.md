@@ -1,12 +1,12 @@
 # AgentFlow — Multi-Agent Business Workflow Automation System
 
-Subtitle: **An intelligent multi-agent platform for automating complex business processes using Python, LangGraph, FastAPI, ChromaDB, SQLAlchemy, and React.**
+Subtitle: **An intelligent multi-agent platform for automating complex business processes using Python, LangGraph, FastAPI, ChromaDB, SQLAlchemy, React, and Streamlit.**
 
 ---
 
 ## 1. Project Overview
 
-**AgentFlow** is an enterprise-grade AI/ML + GenAI + Agentic AI + LLMOps portfolio project designed to automate repetitive business processes and customer support ticket handling. Rather than a basic single-prompt chatbot, AgentFlow orchestrates a team of specialized agents through **LangGraph**, backed by **RAG (ChromaDB)**, **SQL DB (PostgreSQL / SQLite)**, **Human-in-the-Loop approval state machines**, and real-time **LLMOps observability**.
+**AgentFlow** is an enterprise-grade AI/ML + GenAI + Agentic AI + LLMOps portfolio project designed to automate repetitive business processes and customer support ticket handling. Rather than a basic single-prompt chatbot, AgentFlow orchestrates a team of specialized agents through **LangGraph**, backed by **RAG (ChromaDB)**, **SQL DB (PostgreSQL / SQLite)**, **Human-in-the-Loop approval state machines**, real-time **LLMOps observability**, and dual dashboard interfaces (**React + TypeScript** and **Streamlit**).
 
 ---
 
@@ -31,8 +31,9 @@ Businesses receive thousands of repetitive tickets daily (billing disputes, tech
 ```mermaid
 flowchart TD
 
-subgraph Client ["Client Layer"]
-    UI[React + TypeScript Dashboard]
+subgraph Interfaces ["User Interface Layer"]
+    ReactUI[React + TypeScript Dashboard]
+    StreamlitUI[Streamlit App / Streamlit Cloud]
     API_Client[REST API Client / Webhooks]
 end
 
@@ -64,7 +65,8 @@ subgraph Observability ["LLMOps & Monitoring"]
     Metrics[Prometheus Metrics]
 end
 
-UI --> API
+ReactUI --> API
+StreamlitUI --> Service
 API_Client --> API
 API --> Service
 Service --> Agent1
@@ -125,7 +127,18 @@ Graph Resumes via Checkpointer -> Action Agent -> Verification -> Database
 
 ---
 
-## 6. LLM Provider Abstraction
+## 6. Streamlit Integration (`streamlit_app.py`)
+
+AgentFlow features a complete **Streamlit Dashboard App** (`streamlit_app.py`) for rapid demonstration, interactive state inspection, and instant cloud deployment on **Streamlit Community Cloud**:
+- **Submit Tickets & Run Workflows**: Interactive form to launch multi-agent graph execution.
+- **Human Approval Queue**: Live review queue with **Approve** and **Reject** buttons to resume LangGraph state.
+- **LangGraph Workflow Timeline**: Interactive state inspector displaying inputs, outputs, and retrieved citations for each agent node.
+- **Agent Performance**: Charts and latency statistics across all 6 agents.
+- **LLMOps Audit Logs**: Structured execution log viewer.
+
+---
+
+## 7. LLM Provider Abstraction
 
 AgentFlow supports zero-lock-in LLM providers configured via environment variable `LLM_PROVIDER`:
 - **`openai`**: Uses OpenAI API (`gpt-4o-mini` / `gpt-4o`) with structured JSON outputs.
@@ -134,98 +147,44 @@ AgentFlow supports zero-lock-in LLM providers configured via environment variabl
 
 ---
 
-## 7. Demo Scenarios
+## 8. Quickstart Commands
 
-### Scenario 1 — Simple FAQ (Auto-Resolved)
-- **Customer Query**: *"Where can I find API documentation and API keys?"*
-- **Execution**: `Intake -> Classify (General Question, Low Priority) -> RAG (faq.md) -> Decision (AUTO_REPLY, LOW Risk) -> Action (Draft Reply + Citation) -> Verification (Passed) -> RESOLVED`
-
-### Scenario 2 — Complex Technical Problem (Department Assignment)
-- **Customer Query**: *"HTTP 500 error when exporting 50,000 analytics records via REST API."*
-- **Execution**: `Intake -> Classify (Technical Issue, Medium Priority, Technical Support) -> RAG (troubleshooting.md) -> Decision (ASSIGN_TICKET, MEDIUM Risk) -> Action (Assign Technical Support) -> Verification (Passed) -> IN_PROGRESS`
-
-### Scenario 3 — High-Risk Financial Dispute (Human Approval)
-- **Customer Query**: *"My payment failed three times during checkout, but $149.00 was deducted from my bank account."*
-- **Execution**: `Intake -> Classify (Refund / Billing, Urgent) -> RAG (refund_policy.md) -> Decision (REQUEST_HUMAN_APPROVAL, HIGH Risk) -> LangGraph Interrupt (PENDING_APPROVAL) -> Human Manager Clicks Approve on Dashboard -> Resumes Action & Verification -> RESOLVED`
+### Running Streamlit Dashboard App
+```bash
+cd agentic-workflow-automation
+PYTHONPATH=backend backend/venv/bin/streamlit run streamlit_app.py
+```
+Open browser at `http://localhost:8501`.
 
 ---
 
-## 8. API Documentation
+### Running React Dashboard & FastAPI Backend
 
-### Tickets API
-- `POST /api/tickets`: Create a new support ticket.
-- `GET /api/tickets`: List all tickets.
-- `GET /api/tickets/{ticket_id}`: Retrieve ticket details.
-
-### Workflows API
-- `POST /api/workflows/run`: Trigger multi-agent LangGraph workflow execution.
-- `GET /api/workflows`: List workflow execution runs.
-- `GET /api/workflows/{run_id}`: Inspect workflow run state data.
-
-### Approvals API
-- `GET /api/approvals/pending`: Fetch pending human-in-the-loop approval requests.
-- `POST /api/approvals/{approval_id}`: Submit human decision (`approved: true/false`).
-
-### Agents & Logs API
-- `GET /api/agents`: Retrieve performance metrics summary for all 6 agents.
-- `GET /api/runs/{run_id}/logs`: Retrieve structured node execution logs for a workflow.
-- `GET /api/logs`: Audit log stream.
-
----
-
-## 9. Quickstart & Installation
-
-### Option 1 — Local Development with Python 3.11 & Node.js
-
-1. **Clone repository & prepare directory**:
-   ```bash
-   cd agentic-workflow-automation
-   ```
-
-2. **Backend Setup**:
+1. **Start Backend Server**:
    ```bash
    cd backend
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt greenlet
+   PYTHONPATH=. venv/bin/uvicorn app.main:app --reload --port 8000
    ```
 
-3. **Ingest Knowledge Base & Seed Data**:
+2. **Start React Frontend**:
    ```bash
-   python ../scripts/ingest_documents.py
-   python ../scripts/seed_database.py
-   ```
-
-4. **Run Backend Server**:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-5. **Frontend Setup**:
-   ```bash
-   cd ../frontend
-   npm install
+   cd frontend
    npm run dev
    ```
-   Open `http://localhost:3000` in browser.
+   Open browser at `http://localhost:3000`.
 
 ---
 
-### Option 2 — Multi-Container Docker Deployment
-
-Start backend, frontend, PostgreSQL, and ChromaDB using Docker Compose:
-
+### Running Multi-Container Docker Setup
 ```bash
 docker compose up --build
 ```
-- **Frontend Dashboard**: `http://localhost:3000`
-- **FastAPI REST API Docs**: `http://localhost:8000/docs`
 
 ---
 
-## 10. Automated Testing
+## 9. Automated Testing
 
-Run the full pytest suite (Unit, API, LangGraph routers, and E2E Integration tests):
+Run the full pytest suite:
 
 ```bash
 cd backend
@@ -234,44 +193,6 @@ PYTHONPATH=. venv/bin/pytest tests -v
 
 ---
 
-## 11. Project Structure
+## 10. License & Author
 
-```text
-agentic-workflow-automation/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # FastAPI REST endpoints
-│   │   ├── agents/       # 6 Specialized AI Agents
-│   │   ├── graph/        # LangGraph StateGraph & Routers
-│   │   ├── rag/          # ChromaDB RAG Ingestion & Retriever
-│   │   ├── llm/          # OpenAI, Ollama & Mock Providers
-│   │   ├── database/     # SQLAlchemy ORM Models & Repositories
-│   │   ├── integrations/ # Slack & Email Integration Adapters
-│   │   ├── monitoring/   # Structured Logger & Prometheus Metrics
-│   │   ├── schemas/      # Pydantic v2 Models
-│   │   ├── services/     # Ticket Workflow Service Logic
-│   │   ├── main.py       # FastAPI Entrypoint
-│   │   └── config.py     # Pydantic Settings
-│   ├── tests/            # Pytest Unit, API & E2E Suites
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/             # React + TypeScript + Tailwind Dashboard
-│   ├── src/
-│   │   ├── components/   # Timeline, StatusBadge, Navbar, Sidebar
-│   │   ├── pages/        # Overview, Tickets, Approvals, Agents, Logs
-│   │   ├── services/     # API Client
-│   │   └── types/        # TypeScript Interfaces
-│   ├── package.json
-│   └── Dockerfile
-├── knowledge_base/       # Policy & Troubleshooting Markdown Docs
-├── scripts/              # Ingestion & Seed Scripts
-├── docker-compose.yml
-├── .env.example
-└── README.md
-```
-
----
-
-## 12. License & Author
-
-Built with Python, LangGraph, FastAPI, and React for production-grade Agentic Workflow Automation.
+Built with Python, LangGraph, FastAPI, React, and Streamlit for production-grade Agentic Workflow Automation.
