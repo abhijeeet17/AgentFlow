@@ -6,8 +6,14 @@ import time
 import pandas as pd
 import streamlit as st
 
-# Add backend to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "backend")))
+# Configure Python path for Streamlit Cloud and local execution
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.join(current_dir, "backend")
+
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 from app.config import settings
 from app.database.database import init_db, AsyncSessionLocal
@@ -45,7 +51,7 @@ def run_async(coro):
 @st.cache_resource
 def setup_environment():
     run_async(init_db())
-    kb_path = os.path.abspath("./knowledge_base")
+    kb_path = os.path.abspath(os.path.join(current_dir, "knowledge_base"))
     chunks = ingest_knowledge_base(kb_path)
     return chunks
 
